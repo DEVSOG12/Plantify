@@ -5,8 +5,9 @@ name: CD Internal-Lane
 # events but only for the master branch
 on:
   push:
-#     tags:
-#       - "internal-v*.*.*" # on every version tag will build a new android artifact example: v3.1.2+6
+  create:
+    tags:
+      - "internal-v*.*.*" # on every version tag will build a new android artifact example: v3.1.2+6
 jobs:
   build:
     name: Build Artifacts and Release
