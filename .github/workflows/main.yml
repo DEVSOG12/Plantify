@@ -7,7 +7,7 @@ on:
   push:
     create:
       tags:
-        - "internal-v*.*.*" # on every version tag will build a new android artifact example: v3.1.2+6
+        - v1.0.${{ github.run_number }} # on every version tag will build a new android artifact example: v3.1.2+6
 jobs:
   build:
     name: Build Artifacts and Release
@@ -43,22 +43,22 @@ jobs:
       - name: Pub Get Packages
         run: flutter pub get
 
-      - name: Build APPBUNDLE
-        run: flutter build appbundle --release
+      - name: Build apk
+        run: flutter build apk --release
 
       - name: Create Github Release
         uses: ncipollo/release-action@v1
         with:
-          artifacts: "build/app/outputs/bundle/release/*.aab"
+          artifacts: "build/app/outputs/apk/release/*.apk"
           token: ${{ secrets.PERSONAL_RELEASE_TOKEN }}
-          commit: master
-          tag: v1.0.${{ github.run_number }}
+          commit: main
+          # tag: v1.0.${{ github.run_number }}
 
-      - name: Save APPBUNDLE to Artifacts
+      - name: Save APK to Artifacts
         uses: actions/upload-artifact@v2
         with:
-          name: APPBUNDLE
-          path: build/app/outputs/bundle/release/app-release.aab
+          name: APK
+          path: build/app/outputs/apk/release/app-release.apk
 #   release_internal:
 #     name: Release Artifacts to internal track
 #     needs: [build]
