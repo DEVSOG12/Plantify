@@ -1,79 +1,33 @@
-# This is a basic workflow to help you get started with Actions
-name: CD Internal-Lane
-
-# Controls when the action will run. Triggers the workflow on push or pull request
-# events but only for the master branch
+name: CI
 on:
   push:
-    create:
-      tags:
-        - "internal-v*.*.*" # on every version tag will build a new android artifact example: v3.1.2+6
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
 jobs:
-  build:
-    name: Build Artifacts and Release
+  build-and-test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-        # with: fetch-depth: 0
-      - name: Setup Java
-        uses: actions/setup-java@v1
+      - uses: actions/checkout@v1
+      # we need java to build android apks
+      - uses: actions/setup-java@v1
         with:
-          java-version: "12.x"
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v1
+          java-version: '12.x'
+      # this flutter action does the heavy lifting for us
+      - uses: subosito/flutter-action@v1
         with:
           channel: 'stable'
-
-#       - name: Decode android/neumodore_key.jks
-#         run: echo "${{ secrets.KEYSTORE_JKS_PROD }}" | base64 --decode > android/keystore.jks
-
-#       - name: Decode android/key.properties
-#         run: echo "${{ secrets.KEY_PROPERTIES_PROD }}" | base64 --decode > android/key.properties
-
-      # - uses: olegtarasov/get-tag@v2 # that generate $GIT_TAG_NAME env
-      #   id: tagName
-      #   with:
-      #     # tagRegex: 'internal-v([0-9]+.[0-9]+.[0-9]+\+[0-9]+)' # Optional. Returns specified group text as tag name. Full tag string is returned if regex is not defined.
-      #     # tagRegexGroup: 1 # Optional. Default is 1.
-
-      - name: Replace YAML version with tag version
-        run: |
-          sed -i 's/99.99.99+99/'v1.0.${{ github.run_number }}'/g' pubspec.yaml|
-          echo "Tag used version:"v1.0.${{ github.run_number }}
-      - name: Pub Get Packages
-        run: flutter pub get
-
-      - name: Build apk
-        run: flutter build apk --release
-
-      - name: Create Github Release
+      # get packages as you used to in your computer
+      - run: flutter pub get
+      # Now build apk
+      - run: flutter build apk --split-per-abi
+      # now relase the just created build
+      - name: Create a Release APK
         uses: ncipollo/release-action@v1
         with:
           artifacts: "build/app/outputs/apk/release/*.apk"
           token: ${{ secrets.PERSONAL_RELEASE_TOKEN }}
           commit: main
-          # tag: v1.0.${{ github.run_number }}
-
-      - name: Save APK to Artifacts
-        uses: actions/upload-artifact@v2
-        with:
-          name: APK
-          path: build/app/outputs/apk/release/app-release.apk
-#   release_internal:
-#     name: Release Artifacts to internal track
-#     needs: [build]
-#     runs-on: ubuntu-latest
-#     steps:
-#       - uses: actions/checkout@v1
-#       - name: Get APPBUNDLE from Artifacts
-#         uses: actions/download-artifact@v2
-#         with:
-#           name: APPBUNDLE
-#       - name: Release APPBUNDLE to internal track
-#         uses: r0adkll/upload-google-play@v1
-#         with:
-#           serviceAccountJsonPlainText: ${{ secrets.GOOGLE_SERVICE_JSONKEY }}
-#           packageName: com.example.app
-#           releaseFile: app-release.aab
-#           track: internal
-#           whatsNewDirectory: distribution/whatsnew
+          tag: "latest"
